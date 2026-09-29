@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>遺伝子技術のちがいを学ぼう - 品種改良・遺伝子組み換え・ゲノム編集</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700;900&display=swap');
+
+        body {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            background-color: #f0fdf4;
+            color: #333;
+            overflow-x: hidden;
+        }
+
+        .dna-container {
+            position: relative;
+            height: 300px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            perspective: 800px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+            border-radius: 1rem;
+            background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .dna-strand {
+            position: absolute;
+            height: 80%;
+            width: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transform-style: preserve-3d;
+            transition: all 1s ease-in-out;
+        }
+
+        .base-pair {
+            position: relative;
+            width: 100%;
+            height: 12px;
+            transform-style: preserve-3d;
+            animation: rotateDNA 4s linear infinite;
+        }
+
+        /* Delaying rotation for each base pair to create the helix effect */
+        .base-pair:nth-child(1) { animation-delay: -0.0s; }
+        .base-pair:nth-child(2) { animation-delay: -0.4s; }
+        .base-pair:nth-child(3) { animation-delay: -0.8s; }
+        .base-pair:nth-child(4) { animation-delay: -1.2s; }
+        .base-pair:nth-child(5) { animation-delay: -1.6s; }
+        .base-pair:nth-child(6) { animation-delay: -2.0s; }
+        .base-pair:nth-child(7) { animation-delay: -2.4s; }
+        .base-pair:nth-child(8) { animation-delay: -2.8s; }
+        .base-pair:nth-child(9) { animation-delay: -3.2s; }
+        .base-pair:nth-child(10) { animation-delay: -3.6s; }
+
+        .line {
+            position: absolute;
+            top: 50%;
+            left: 10%;
+            width: 80%;
+            height: 2px;
+            background-color: #64748b;
+            transform: translateY(-50%);
+        }
+
+        .dot {
+            position: absolute;
+            top: 50%;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            transform: translateY(-50%);
+        }
+
+        /* 基本のドット位置 */
+        .dot-left { left: 0; } 
+        .dot-right { right: 0; } 
+        
+        /* 遺伝子組換え・ゲノム編集用の基本配色 (第2, 第3カラム) */
+        #recomb-container .base-pair:nth-child(odd) .dot-left,
+        #edit-container .base-pair:nth-child(odd) .dot-left { background-color: #eab308; } /* 黄 */
+        #recomb-container .base-pair:nth-child(odd) .dot-right,
+        #edit-container .base-pair:nth-child(odd) .dot-right { background-color: #22c55e; } /* 緑 */
+        #recomb-container .base-pair:nth-child(even) .dot-left,
+        #edit-container .base-pair:nth-child(even) .dot-left { background-color: #ef4444; } /* 赤 */
+        #recomb-container .base-pair:nth-child(even) .dot-right,
+        #edit-container .base-pair:nth-child(even) .dot-right { background-color: #3b82f6; } /* 青 */
+
+        /* 品種改良用の特定の色 */
+        .father-dna .dot { background-color: #3b82f6; } /* 父親は青のみ */
+        .mother-dna .dot { background-color: #ef4444; } /* 母親は赤のみ */
+
+        @keyframes rotateDNA {
+            0% { transform: rotateY(0deg); }
+            100% { transform: rotateY(360deg); }
+        }
+
+        /* Breeding Animation */
+        .breeding-strand-1 { left: 20%; transform: scale(0.8); }
+        .breeding-strand-2 { right: 20%; transform: scale(0.8); }
+        .breeding-animating .breeding-strand-1 { left: 50%; transform: translateX(-50%) scale(1); opacity: 0; }
+        .breeding-animating .breeding-strand-2 { right: 50%; transform: translateX(50%) scale(1); opacity: 0; }
+        .breeding-result { opacity: 0; position: absolute; left: 50%; transform: translateX(-50%); display: none; }
+        
+        /* 混ざった結果を表示するためのアニメーション制御 */
+        .breeding-animating .breeding-result { 
+            display: flex;
+            animation: fadeInResult 2s forwards;
+            animation-delay: 1s;
+        }
+
+        /* Recombination Animation */
+        .recomb-strand { left: 50%; transform: translateX(-50%); }
+        .foreign-gene {
+            position: absolute;
+            top: -30px;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            z-index: 10;
+            width: 60px; /* dna-strandと同じ幅 */
+            height: 12px;
+        }
+        
+        /* 挿入される遺伝子の色 */
+        .foreign-gene .dot-left { background-color: #a855f7; }
+        .foreign-gene .dot-right { background-color: #f97316; }
+
+        .recomb-animating .foreign-gene {
+            animation: insertGene 3s forwards;
+        }
+        
+        /* 挿入のために隙間を空ける */
+        .recomb-strand .base-pair { transition: transform 1s ease-in-out; }
+        .recomb-animating .recomb-strand .base-pair:nth-child(1),
+        .recomb-animating .recomb-strand .base-pair:nth-child(2),
+        .recomb-animating .recomb-strand .base-pair:nth-child(3) {
+            transform: translateY(-15px);
+        }
+        .recomb-animating .recomb-strand .base-pair:nth-child(4),
+        .recomb-animating .recomb-strand .base-pair:nth-child(5),
+        .recomb-animating .recomb-strand .base-pair:nth-child(6) {
+            transform: translateY(15px);
+        }
+
+        /* Editing Animation */
+        .edit-strand { left: 50%; transform: translateX(-50%); }
+        
+        /* 切断用の上部と下部の分離 */
+        .edit-top, .edit-bottom { transition: transform 1s ease-in-out; }
+        .edit-animating .edit-top {
+            transform: translateY(-15px);
+            transition-delay: 1.2s; /* ハサミで切るまで待つ */
+        }
+        .edit-animating .edit-bottom {
+            transform: translateY(15px);
+            transition-delay: 1.2s;
+        }
+
+        .scissors {
+            position: absolute;
+            top: 45%;
+            left: -30px;
+            font-size: 2rem;
+            color: #475569;
+            opacity: 0;
+            z-index: 10;
+        }
+        .edit-animating .scissors {
+            animation: snipCut 3s forwards;
+        }
+        
+        /* ターゲット塩基の変色・消失アニメーション */
+        .edit-animating .target-base {
+            animation: disappearPart 3s forwards;
+        }
+        
+        /* 確実にグレーアウトさせるため、ドットと線の背景色を直接変更 */
+        .edit-animating .target-base .dot,
+        .edit-animating .target-base .line {
+            animation: colorToGray 3s forwards;
+        }
+
+        /* Keyframes for specific actions */
+        @keyframes fadeInResult {
+            0% { opacity: 0; transform: translateX(-50%) scale(0.5); }
+            100% { opacity: 1; transform: translateX(-50%) scale(1); }
+        }
+
+        @keyframes insertGene {
+            0% { top: -30px; opacity: 0; }
+            30% { top: 50%; margin-top: -6px; opacity: 1; transform: translateX(-50%); }
+            100% { top: 50%; margin-top: -6px; opacity: 1; transform: translateX(-50%); }
+        }
+
+        @keyframes snipCut {
+            0% { left: -30px; opacity: 0; top: 45%; transform: rotate(0deg); }
+            20% { left: 25%; opacity: 1; transform: rotate(20deg); }
+            40% { left: 45%; opacity: 1; transform: rotate(-20deg); } /* 切断の瞬間(1.2秒) */
+            50% { left: 45%; opacity: 1; transform: rotate(0deg); }
+            80% { left: 100%; opacity: 0; transform: rotate(0deg); }
+            100% { left: 100%; opacity: 0; }
+        }
+
+        /* ターゲット塩基の分割線スタイル */
+        .target-base .line-left,
+        .target-base .line-right {
+            position: absolute;
+            top: 50%;
+            height: 2px;
+            width: 40%;
+            background-color: #64748b;
+            transform: translateY(-50%);
+        }
+        .target-base .line-left { left: 10%; }
+        .target-base .line-right { right: 10%; }
+
+        /* 切断後、左右の線が2つに途切れるアニメーション */
+        .edit-animating .target-base .line-left {
+            animation: cutLineLeft 3s forwards;
+        }
+        .edit-animating .target-base .line-right {
+            animation: cutLineRight 3s forwards;
+        }
+
+        /* 切断後、玉（ドット）がグレーに変色するアニメーション */
+        .edit-animating .target-base .dot {
+            animation: colorToGrayDot 3s forwards;
+        }
+
+        @keyframes cutLineLeft {
+            0%, 39% { width: 40%; left: 10%; background-color: #64748b; opacity: 1; }
+            40% { width: 40%; left: 10%; background-color: #64748b; opacity: 1; } /* 1.2秒: 切断開始 */
+            50% { width: 28%; left: 10%; background-color: #94a3b8; opacity: 1; } /* 切れて短くなりグレー化 */
+            80% { width: 28%; left: 10%; background-color: #94a3b8; opacity: 1; }
+            100% { width: 28%; left: 10%; background-color: #94a3b8; opacity: 0; }
+        }
+
+        @keyframes cutLineRight {
+            0%, 39% { width: 40%; right: 10%; background-color: #64748b; opacity: 1; }
+            40% { width: 40%; right: 10%; background-color: #64748b; opacity: 1; } /* 1.2秒: 切断開始 */
+            50% { width: 28%; right: 10%; background-color: #94a3b8; opacity: 1; } /* 切れて短くなりグレー化 */
+            80% { width: 28%; right: 10%; background-color: #94a3b8; opacity: 1; }
+            100% { width: 28%; right: 10%; background-color: #94a3b8; opacity: 0; }
+        }
+
+        @keyframes colorToGrayDot {
+            0%, 39% { opacity: 1; } /* 切る前は元の色 */
+            50% { background-color: #94a3b8 !important; opacity: 1; } /* 切られた後にグレーに変色 */
+            80% { background-color: #94a3b8 !important; opacity: 1; }
+            100% { background-color: #94a3b8 !important; opacity: 0; }
+        }
+
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 50;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background-color: #fff;
+            margin: 5% auto;
+            padding: 20px;
+            border-radius: 1rem;
+            width: 90%;
+            max-width: 900px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            animation: slideDown 0.3s ease-out;
+        }
+        
+        @keyframes slideDown {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Custom scrollbar for table */
+        .table-container {
+            overflow-x: auto;
+        }
+        
+        /* Stop animation class */
+        .pause-anim .base-pair {
+            animation-play-state: paused !important;
+        }
+        
+        .btn-action {
+            transition: all 0.2s;
+        }
+        .btn-action:active {
+            transform: scale(0.95);
+        }
+        
+        /* Layout Adjustments for No-Scroll 3-column view */
+        body {
+            /* Prevent body scroll, maintain full viewport height */
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .main-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: row;
+            gap: 1rem;
+            padding: 1rem;
+            overflow: hidden; /* Prevent overflow within main container */
+        }
+
+        .tech-column {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            overflow: hidden; /* Keep contents inside rounded corners */
+            background-color: white;
+        }
+        
+        .tech-header {
+            padding: 0.75rem;
+            text-align: center;
+            border-bottom: 2px solid #e2e8f0;
+        }
+
+        .tech-desc {
+            padding: 0.75rem 1rem 0;
+            font-size: 0.85rem;
+            color: #4b5563;
+            flex-shrink: 0;
+            /* Fixed height to align the start of animations */
+            height: 4.5rem; 
+            display: flex;
+            align-items: flex-start;
+        }
+
+        .anim-area {
+            flex-grow: 1;
+            position: relative;
+            margin: 0.5rem;
+            border-radius: 0.75rem;
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            /* Redefine dna-container specific to the new fluid layout */
+            perspective: 600px;
+        }
+
+        /* Adjust DNA strands for shorter container */
+        .dna-strand {
+            height: 85%;
+        }
+
+        .action-area {
+            padding: 0.75rem;
+            background-color: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            height: 6rem; /* Fixed height for action area */
+        }
+
+        .anim-desc {
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-align: center;
+            opacity: 0;
+            transition: opacity 0.5s;
+            height: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* Header and Footer compacting */
+        header {
+            flex-shrink: 0;
+            padding: 0.5rem 1rem;
+        }
+        
+        .footer-action {
+            flex-shrink: 0;
+            padding: 0.5rem;
+            display: flex;
+            justify-content: center;
+            background-color: #f0fdf4;
+            border-top: 1px solid #dcfce3;
+        }
+
+        /* Border Colors */
+        .col-orange { border-top: 6px solid #f97316; }
+        .col-blue { border-top: 6px solid #3b82f6; }
+        .col-purple { border-top: 6px solid #a855f7; }
+    </style>
+</head>
+<body>
+
+    <header class="bg-green-600 text-white shadow-md z-40">
+        <div class="container mx-auto flex justify-between items-center h-full">
+            <h1 class="text-xl md:text-2xl font-black flex items-center gap-2">
+                <i class="fa-solid fa-leaf"></i> 遺伝子技術のちがいを学ぼう
+            </h1>
+            <p class="text-green-100 text-xs md:text-sm font-bold hidden md:block">
+                〜 品種改良・遺伝子組み換え・ゲノム編集 〜
+            </p>
+        </div>
+    </header>
+
+    <main class="main-container">
+        
+        <!-- Column 1: 品種改良 (Selective Breeding) -->
+        <section class="tech-column col-orange">
+            <div class="tech-header bg-orange-50">
+                <h2 class="text-lg font-bold text-orange-600">
+                    <i class="fa-solid fa-seedling mr-1"></i>品種改良
+                </h2>
+                <span class="text-xs text-gray-500">（ひんしゅかいりょう）</span>
+            </div>
+            
+            <div class="tech-desc">
+                <p>欲しい形質をもった親同士をかけ合わせて、目的の形質をもつ子どもを作る、昔からある方法だよ。</p>
+            </div>
+            
+            <!-- pause-animクラスを追加して初期状態で回転させない -->
+            <div class="anim-area pause-anim" id="breeding-container">
+                <!-- 親1 (父親・青系) -->
+                <div class="dna-strand breeding-strand-1 father-dna">
+                    <div class="base-pair"><div class="line"></div><div class="dot dot-left"></div><div class="dot dot-right"></div></div>
+                    <div class="base-pair"><div class="line"></div><div class="dot dot-left"></div><div class="dot dot-right"></div></div>
+                    <div class="base-pair"><div class="line"></div><div class="dot dot-left"></div><div class="dot dot-right"></div></div>
+                    <div class="base-pair"><div class="line"></div><div class="dot dot-left"></div><div class="dot dot-right"></div></div>
+                    <div class="base-pair"><div class="line"></div><div class="dot dot-left"></div><div class="dot dot-right"></div></div>
+                    <div class="base-pair"><div class="line"></div><div class="dot dot-left"></div><div class="dot dot-right"></div></div>
+                </div>
+                <!-- 親2 (母親・赤系) -->
+                <div class="dna-strand breeding-strand-2 mother-dna">
+                    <div class="base-pair"><div class="line"></div><div class="dot dot-left"></div><div class="dot dot-right"></div></div>
+                    <div class="base-pair"><div class="line"></div><div class="dot dot-left"></div><div class="dot dot-right"></div></div>
+                    <div class="base-pair"><div class="line"></div><div class="dot dot-left"></div><div class="dot dot-right"></div></div>
+                    <div class="base-pair"><div class="line"></div><div class="dot dot-left"></div><div class="dot dot-right"></div></div>
+                    <div class="base-pair"><div class="line"></div><div class="dot dot-left"></div><div class="dot dot-right"></div></div>
+                    <div class="base-pair"><div class="line"></div><div class="dot dot-left"></div><div class="dot dot-right"></div></div>
+                </div>
+                <!-- 子ども (青と赤が混ざる) -->
+                <div class="dna-strand breeding-result">
+                    <div class="base-pair"><div class="line"></div><div class="dot dot-left" style="background-color: #3b82f6;"></div><div class="dot dot-right" style="background-color: #ef4444;"></div></div>
+                    <div class="base-pair"><div class="line"></div><div class="dot dot-left" style="background-color: #ef4444;"></div><div class="dot dot-right" style="background-color: #3b82f6;"></div></div>
+                    <div class="base-pair"><div class="line"></div><div class="dot dot-left" style="background-color: #3b82f6;"></div><div class="dot dot-right" style="background-color: #3b82f6;"></div></div>
+                    <div class="base-pair"><div class="line"></div><div class="dot dot-left" style="background-color: #ef4444;"></div><div class="dot dot-right" style="background-color: #ef4444;"></div></div>
+                    <div class="base-pair"><div class="line"></div><div class="dot dot-left" style="background-color: #3b82f6;"></div><div class="dot dot-right" style="background-color: #ef4444;"></div></div>
+                    <div class="base-pair"><div class="line"></div><div class="dot dot-left" style="background-color: #ef4444;"></div><div class="dot dot-right" style="background-color: #ef4444;"></div></div>
+                </div>
+            </div>
+            
+            <div class="action-area">
+                <button onclick="playBreedingAnimation()" class="btn-action w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2 px-4 rounded-lg shadow-[0_3px_0_rgb(194,65,12)]">
+                    <i class="fa-solid fa-play mr-1"></i>どんな方法？
+                </button>
+                <div id="breeding-desc" class="anim-desc text-orange-700">
+                    親の遺伝子がランダムに混ざり合うよ！
+                </div>
+            </div>
+        </section>
+
+        <!-- Column 2: 遺伝子組み換え (Genetic Modification) -->
+        <section class="tech-column col-blue">
+            <div class="tech-header bg-blue-50">
+                <h2 class="text-lg font-bold text-blue-600">
+                    <i class="fa-solid fa-puzzle-piece mr-1"></i>遺伝子組み換え
+                </h2>
+                <span class="text-xs text-gray-500">（いでんしくみかえ）</span>
+            </div>
+            
+            <div class="tech-desc">
+                <p>別の生き物が持っている「便利な遺伝子」を、目的の生物のDNAの中に直接いれる方法だよ。</p>
+            </div>
+            
+            <div class="anim-area pause-anim" id="recomb-container">
+                <!-- 挿入される遺伝子を元の塩基ペアと同じ構造に変更 -->
+                <div class="foreign-gene">
+                    <div class="line"></div><div class="dot dot-left"></div><div class="dot dot-right"></div>
+                </div>
+                <div class="dna-strand recomb-strand" id="recomb-strand-inner">
+                    <div class="base-pair"><div class="line"></div><div class="dot dot-left"></div><div class="dot dot-right"></div></div>
+                    <div class="base-pair"><div class="line"></div><div class="dot dot-left"></div><div class="dot dot-right"></div></div>
+                    <div class="base-pair"><div class="line"></div><div class="dot dot-left"></div><div class="dot dot-right"></div></div>
+                    <!-- Gap opens here during animation -->
+                    <div class="base-pair"><div class="line"></div><div class="dot dot-left"></div><div class="dot dot-right"></div></div>
+                    <div class="base-pair"><div class="line"></div><div class="dot dot-left"></div><div class="dot dot-right"></div></div>
+                    <div class="base-pair"><div class="line"></div><div class="dot dot-left"></div><div class="dot dot-right"></div></div>
+                </div>
+            </div>
+            
+            <div class="action-area">
+                <button onclick="playRecombAnimation()" class="btn-action w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded-lg shadow-[0_3px_0_rgb(29,78,216)]">
+                    <i class="fa-solid fa-play mr-1"></i>どんな方法？
+                </button>
+                <div id="recomb-desc" class="anim-desc text-blue-700">
+                    別の遺伝子を直接くっつけるよ！
+                </div>
+            </div>
+        </section>
+
+        <!-- Column 3: ゲノム編集 (Genome Editing) -->
+        <section class="tech-column col-purple">
+            <div class="tech-header bg-purple-50">
+                <h2 class="text-lg font-bold text-purple-600">
+                    <i class="fa-solid fa-scissors mr-1"></i>ゲノム編集
+                </h2>
+                <span class="text-xs text-gray-500">（げのむへんしゅう）</span>
+            </div>
+            
+            <div class="tech-desc">
+                <p>DNAの「特定の場所」だけをハサミのようなもので狙って切り、そのはたらきをなくす（または変える）最新技術だよ。</p>
+            </div>
+            
+            <div class="anim-area pause-anim" id="edit-container">
+                <i class="fa-solid fa-scissors scissors"></i>
+                <div class="dna-strand edit-strand">
+                    <div class="base-pair edit-top"><div class="line"></div><div class="dot dot-left"></div><div class="dot dot-right"></div></div>
+                    <div class="base-pair edit-top"><div class="line"></div><div class="dot dot-left"></div><div class="dot dot-right"></div></div>
+                    <div class="base-pair edit-top"><div class="line"></div><div class="dot dot-left"></div><div class="dot dot-right"></div></div>
+                    
+                    <!-- 切断されるターゲット（線を左右2つに分割） -->
+                    <div class="base-pair target-base">
+                        <div class="line-left"></div><div class="line-right"></div><div class="dot dot-left"></div><div class="dot dot-right"></div>
+                    </div>
+
+                    <div class="base-pair edit-bottom"><div class="line"></div><div class="dot dot-left"></div><div class="dot dot-right"></div></div>
+                    <div class="base-pair edit-bottom"><div class="line"></div><div class="dot dot-left"></div><div class="dot dot-right"></div></div>
+                    <div class="base-pair edit-bottom"><div class="line"></div><div class="dot dot-left"></div><div class="dot dot-right"></div></div>
+                </div>
+            </div>
+            
+            <div class="action-area">
+                <button onclick="playEditAnimation()" class="btn-action w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded-lg shadow-[0_3px_0_rgb(126,34,206)]">
+                    <i class="fa-solid fa-play mr-1"></i>どんな方法？
+                </button>
+                <div id="edit-desc" class="anim-desc text-purple-700">
+                    狙った場所だけをピンポイントで切るよ！
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="footer-action z-30">
+        <button onclick="openModal()" class="btn-action bg-gradient-to-r from-teal-500 to-green-500 hover:from-teal-600 hover:to-green-600 text-white font-bold text-sm md:text-base py-2 px-8 rounded-full shadow-[0_4px_0_rgb(15,118,110)] border-2 border-white transition-all transform hover:scale-105">
+            <i class="fa-solid fa-table-list mr-2"></i> ３つのメリットとデメリットを比べる
+        </button>
+    </div>
+
+    <div id="compareModal" class="modal">
+        <div class="modal-content relative">
+            <span class="close-btn absolute top-4 right-6 text-gray-400 hover:text-gray-800 text-3xl font-bold cursor-pointer transition-colors" onclick="closeModal()">&times;</span>
+            
+            <h2 class="text-2xl font-black text-center text-gray-800 mb-6 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-magnifying-glass-chart text-teal-500"></i> ちがいをくらべてみよう！
+            </h2>
+            
+            <div class="table-container rounded-lg border border-gray-200">
+                <table class="w-full text-sm text-left">
+                    <thead class="text-xs md:text-sm text-gray-700 uppercase bg-gray-100">
+                        <tr>
+                            <th scope="col" class="px-6 py-4 rounded-tl-lg w-1/4">ポイント</th>
+                            <th scope="col" class="px-6 py-4 border-l border-gray-300 text-orange-600 w-1/4 bg-orange-50"><i class="fa-solid fa-seedling"></i> 品種改良</th>
+                            <th scope="col" class="px-6 py-4 border-l border-gray-300 text-blue-600 w-1/4 bg-blue-50"><i class="fa-solid fa-puzzle-piece"></i> 遺伝子組み換え</th>
+                            <th scope="col" class="px-6 py-4 border-l border-gray-300 rounded-tr-lg text-purple-600 w-1/4 bg-purple-50"><i class="fa-solid fa-scissors"></i> ゲノム編集</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="bg-white border-b hover:bg-gray-50">
+                            <th scope="row" class="px-6 py-4 font-bold text-gray-900 bg-gray-50">
+                                どんなしくみ？
+                            </th>
+                            <td class="px-6 py-4 border-l border-gray-200">
+                                親同士をかけ合わせて、<br>偶然いい形質をもつ子ができるのを待つ。
+                            </td>
+                            <td class="px-6 py-4 border-l border-gray-200">
+                                全く別の生き物の遺伝子（DNA）を、無理やりくっつける。
+                            </td>
+                            <td class="px-6 py-4 border-l border-gray-200">
+                                もともと持っているDNAの、狙った場所だけをピンポイントで切る。
+                            </td>
+                        </tr>
+                        <tr class="bg-white border-b hover:bg-gray-50">
+                            <th scope="row" class="px-6 py-4 font-bold text-gray-900 bg-gray-50 text-red-500">
+                                <i class="fa-regular fa-circle-check"></i> メリット<br><span class="text-xs text-gray-500">（いいところ）</span>
+                            </th>
+                            <td class="px-6 py-4 border-l border-gray-200">
+                                <ul class="list-disc list-inside space-y-1">
+                                    <li>昔からやっている方法だから、安心感がある。</li>
+                                    <li>特別な機械がなくてもできる。</li>
+                                </ul>
+                            </td>
+                            <td class="px-6 py-4 border-l border-gray-200">
+                                <ul class="list-disc list-inside space-y-1">
+                                    <li>自然界ではありえないような強い特徴（除草剤で枯れないなど）を作れる。</li>
+                                </ul>
+                            </td>
+                            <td class="px-6 py-4 border-l border-gray-200">
+                                <ul class="list-disc list-inside space-y-1">
+                                    <li>狙った通りに変えられる。</li>
+                                    <li>品種改良のように偶然を待たないので、<strong>とても短期間（数年）</strong>で新しい品種が作れる。</li>
+                                </ul>
+                            </td>
+                        </tr>
+                        <tr class="bg-white hover:bg-gray-50">
+                            <th scope="row" class="px-6 py-4 font-bold text-gray-900 bg-gray-50 text-blue-500">
+                                <i class="fa-solid fa-triangle-exclamation"></i> デメリット<br><span class="text-xs text-gray-500">（注意点・課題）</span>
+                            </th>
+                            <td class="px-6 py-4 border-l border-gray-200 rounded-bl-lg">
+                                <ul class="list-disc list-inside space-y-1">
+                                    <li>思い通りの特徴が出るか分からず、<strong>とても時間がかかる（10年以上）</strong>。</li>
+                                </ul>
+                            </td>
+                            <td class="px-6 py-4 border-l border-gray-200">
+                                <ul class="list-disc list-inside space-y-1">
+                                    <li>別の生き物の遺伝子を入れるため、自然界への影響や安全性を心配する声がある。</li>
+                                    <li>食品に「遺伝子組み換え」と表示するルールがある。</li>
+                                </ul>
+                            </td>
+                            <td class="px-6 py-4 border-l border-gray-200 rounded-br-lg">
+                                <ul class="list-disc list-inside space-y-1">
+                                    <li>狙った場所とは別のDNAを間違えて切ってしまう可能性（オフターゲット効果）がゼロではない。</li>
+                                    <li>外から別の遺伝子を入れていない場合、自然の突然変異（例えば放射線による品種改良）と区別がつきにくく、表示のルールづくりが難しい。</li>
+                                </ul>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <div class="mt-6 text-center">
+                <button onclick="closeModal()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-6 rounded-full transition-colors">
+                    とじる
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Modal logic
+        const modal = document.getElementById("compareModal");
+        
+        function openModal() {
+            modal.style.display = "block";
+            document.body.style.overflow = "hidden"; // Prevent background scrolling
+        }
+        
+        function closeModal() {
+            modal.style.display = "none";
+            document.body.style.overflow = "auto";
+        }
+        
+        // Close modal if clicked outside
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+
+        // Animation logic
+        function playBreedingAnimation() {
+            const container = document.getElementById('breeding-container');
+            const desc = document.getElementById('breeding-desc');
+            const resultDna = document.querySelector('.breeding-result');
+            
+            // Start DNA rotation
+            container.classList.remove('pause-anim');
+            
+            // Add animation class
+            container.classList.add('breeding-animating');
+            desc.style.opacity = '1';
+            
+            // Reset after animation completes
+            setTimeout(() => {
+                container.classList.remove('breeding-animating');
+                container.classList.add('pause-anim'); // Stop rotation again
+                desc.style.opacity = '0';
+                
+                // Hide result manually if needed, though CSS animation handles opacity
+                resultDna.style.display = 'none';
+                // Trigger reflow to restart animation on next click
+                void resultDna.offsetWidth;
+                resultDna.style.display = '';
+            }, 4000);
+        }
+
+        function playRecombAnimation() {
+            const container = document.getElementById('recomb-container');
+            const strandInner = document.getElementById('recomb-strand-inner');
+            const desc = document.getElementById('recomb-desc');
+            
+            // Start DNA rotation
+            container.classList.remove('pause-anim');
+            
+            // Add animation class
+            container.classList.add('recomb-animating');
+            desc.style.opacity = '1';
+            
+            // Stop rotation slightly during insertion for dramatic effect
+            setTimeout(() => {
+                container.classList.add('pause-anim');
+            }, 1000);
+
+            // Resume rotation after insertion
+            setTimeout(() => {
+                container.classList.remove('pause-anim');
+            }, 3000);
+            
+            // Reset after animation
+            setTimeout(() => {
+                container.classList.remove('recomb-animating');
+                container.classList.add('pause-anim'); // Return to still state
+                desc.style.opacity = '0';
+            }, 4500);
+        }
+
+        function playEditAnimation() {
+            const container = document.getElementById('edit-container');
+            const desc = document.getElementById('edit-desc');
+            
+            // Start DNA rotation
+            container.classList.remove('pause-anim');
+            
+            // Add animation class
+            container.classList.add('edit-animating');
+            desc.style.opacity = '1';
+            
+            // Stop rotation when cutting
+            setTimeout(() => {
+                container.classList.add('pause-anim');
+            }, 1000);
+            
+            // Reset after animation
+            setTimeout(() => {
+                container.classList.remove('edit-animating');
+                desc.style.opacity = '0';
+            }, 4000);
+        }
+        
+        // Initialize: Ensure specific containers start paused to make button click more impactful
+        document.addEventListener('DOMContentLoaded', () => {
+           // breeding container rotates by default, others wait for click
+        });
+    </script>
+</body>
+</html>
